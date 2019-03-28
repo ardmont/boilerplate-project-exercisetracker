@@ -5,7 +5,11 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
-mongoose.connect(process.env.MLAB_URI || 'mongodb://localhost/exercise-track')
+mongoose.connect(process.env.MONGODB, { useNewUrlParser: true })
+const userSchema = new mongoose.Schema({
+  username: String
+})
+const User = mongoose.model('User', userSchema)
 
 app.use(cors())
 
@@ -15,6 +19,16 @@ app.use(bodyParser.json())
 app.use(express.static('public'))
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
+})
+
+app.post('/api/exercise/new-user', (req, res) => {
+  var username = req.body.username
+
+  var user = new User({ username: username })
+  user.save(function (err, user) {
+    if (err) return console.error(err)
+    res.json(user)
+  })
 })
 
 // Not found middleware
