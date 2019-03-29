@@ -6,8 +6,15 @@ const cors = require('cors')
 
 const mongoose = require('mongoose')
 mongoose.connect(process.env.MONGODB, { useNewUrlParser: true })
+
+const exerciseSchema = new mongoose.Schema({
+  description: String,
+  duration: Number,
+  date: Date
+})
 const userSchema = new mongoose.Schema({
-  username: String
+  username: String,
+  exercises: [exerciseSchema]
 })
 const User = mongoose.model('User', userSchema)
 
@@ -42,6 +49,27 @@ app.post('/api/exercise/new-user', (req, res) => {
         if (err) return console.error(err)
         res.json(user)
       })
+    }
+  })
+})
+
+app.post('/api/exercise/add', (req, res) => {
+  User.findById(req.body.userId, (err, user) => {
+    if (!err && user) {
+      var today = new Date()
+      var todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
+      var exercise = {
+        description: req.body.description,
+        duration: req.body.duration,
+        date: req.body.date ? req.body.date : todayString
+      }
+      user.exercises.push(exercise)
+      user.save((err) => {
+        if (err) res.send(err)
+        res.json(user)
+      })
+    } else {
+      res.send("User doesn't exist")
     }
   })
 })
