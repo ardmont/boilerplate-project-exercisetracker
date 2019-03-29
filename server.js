@@ -21,13 +21,28 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 })
 
+app.get('/api/exercise/users', (req, res) => {
+  User.find({}, (err, users) => {
+    if (err) {
+      res.send(err)
+    }
+    res.json(users)
+  })
+})
+
 app.post('/api/exercise/new-user', (req, res) => {
   var username = req.body.username
 
-  var user = new User({ username: username })
-  user.save(function (err, user) {
-    if (err) return console.error(err)
-    res.json(user)
+  User.findOne({ 'username': username }, function (err, user) {
+    if (!err && user) {
+      res.json(user)
+    } else {
+      var newUser = new User({ username: username })
+      newUser.save(function (err, user) {
+        if (err) return console.error(err)
+        res.json(user)
+      })
+    }
   })
 })
 
