@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
-mongoose.connect(process.env.MONGODB, { useNewUrlParser: true })
+mongoose.connect(process.env.MONGODBURL, { useNewUrlParser: true })
 
 const exerciseSchema = new mongoose.Schema({
   description: String,
