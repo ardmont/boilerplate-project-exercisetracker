@@ -37,6 +37,34 @@ app.get('/api/exercise/users', (req, res) => {
   })
 })
 
+app.get('/api/exercise/log/', (req, res) => {
+  User.findById(req.query.userId, (err, user) => {
+    if (!err && user) {
+      var exercises = user.exercises
+      var count = exercises.length
+      var log = []
+
+      for (let exercise of exercises) {
+        log.push({
+          description: exercise.description,
+          duration: exercise.duration,
+          date: exercise.date })
+      }
+
+      var response = {
+        _id: user._id,
+        username: user.username,
+        count: count,
+        log: log
+      }
+
+      res.json(response)
+    } else {
+      res.send("User doesn't exist")
+    }
+  })
+})
+
 app.post('/api/exercise/new-user', (req, res) => {
   var username = req.body.username
 
