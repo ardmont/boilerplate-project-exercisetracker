@@ -10,13 +10,16 @@ mongoose.connect(process.env.MONGODBURL, { useNewUrlParser: true })
 const exerciseSchema = new mongoose.Schema({
   description: String,
   duration: Number,
-  date: Date
+  date: Date,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 })
 const userSchema = new mongoose.Schema({
   username: String,
-  exercises: [exerciseSchema]
+  exercises: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exercise' }]
 })
+
 const User = mongoose.model('User', userSchema)
+const Exercise = mongoose.model('Exercise', exerciseSchema)
 
 app.use(cors())
 
@@ -89,17 +92,29 @@ app.post('/api/exercise/add', (req, res) => {
       var exercise = {
         description: req.body.description,
         duration: req.body.duration,
-        date: req.body.date ? req.body.date : todayString
+        date: req.body.date ? req.body.date : todayString,
+        user: user._id
       }
-      user.exercises.push(exercise)
-      user.save((err) => {
-        if (err) res.send(err)
-        res.json(user)
+      var newExercise = new Exercise(exercise)
+      newExercise.save((err, exercise) => {
+        if (err) {
+          res.send(err)
+        } else {
+          user.exercises.push(exercise._id)
+          user.save((err, user) => {
+            if (err) res.send(err)
+          })
+        }
       })
     } else {
       res.send("User doesn't exist")
     }
   })
+    .populate('exercises')
+    .exec((err, user) => {
+      if (err) res.send(err)
+      res.json(user)
+    })
 })
 
 // Not found middleware
