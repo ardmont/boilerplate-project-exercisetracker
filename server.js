@@ -92,11 +92,10 @@ app.post('/api/exercise/add', (req, res) => {
   User.findById(req.body.userId, (err, user) => {
     if (!err && user) {
       var today = new Date()
-      var todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
       var exercise = {
         description: req.body.description,
         duration: req.body.duration,
-        date: req.body.date ? req.body.date : todayString,
+        date: req.body.date ? req.body.date : today,
         user: user._id
       }
       var newExercise = new Exercise(exercise)
