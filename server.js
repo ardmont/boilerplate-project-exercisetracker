@@ -32,40 +32,44 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/exercise/users', (req, res) => {
-  User.find({}, (err, users) => {
-    if (err) {
-      res.send(err)
-    }
-    res.json(users)
-  })
+  User.find({})
+    .populate('exercises')
+    .exec((err, users) => {
+      if (err) {
+        res.send(err)
+      }
+      res.json(users)
+    })
 })
 
 app.get('/api/exercise/log/', (req, res) => {
-  User.findById(req.query.userId, (err, user) => {
-    if (!err && user) {
-      var exercises = user.exercises
-      var count = exercises.length
-      var log = []
+  User.findById(req.query.userId)
+    .populate('exercises')
+    .exec((err, user) => {
+      if (!err && user) {
+        var exercises = user.exercises
+        var count = exercises.length
+        var log = []
 
-      for (let exercise of exercises) {
-        log.push({
-          description: exercise.description,
-          duration: exercise.duration,
-          date: exercise.date })
+        for (let exercise of exercises) {
+          log.push({
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date })
+        }
+
+        var response = {
+          _id: user._id,
+          username: user.username,
+          count: count,
+          log: log
+        }
+
+        res.json(response)
+      } else {
+        res.send("User doesn't exist")
       }
-
-      var response = {
-        _id: user._id,
-        username: user.username,
-        count: count,
-        log: log
-      }
-
-      res.json(response)
-    } else {
-      res.send("User doesn't exist")
-    }
-  })
+    })
 })
 
 app.post('/api/exercise/new-user', (req, res) => {
