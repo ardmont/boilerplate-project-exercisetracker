@@ -70,7 +70,7 @@ app.post('/api/exercise/new-user', (req, res) => {
 
   User.findOne({ 'username': username }, function (err, user) {
     if (!err && user) {
-      res.json(user)
+      res.send('Username already taken')
     } else {
       var newUser = new User({ username: username })
       newUser.save(function (err, user) {
