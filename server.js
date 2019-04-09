@@ -10,13 +10,16 @@ mongoose.connect(process.env.MONGODBURL, { useNewUrlParser: true })
 const exerciseSchema = new mongoose.Schema({
   description: String,
   duration: Number,
-  date: Date
+  date: Date,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 })
 const userSchema = new mongoose.Schema({
   username: String,
-  exercises: [exerciseSchema]
+  exercises: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exercise' }]
 })
+
 const User = mongoose.model('User', userSchema)
+const Exercise = mongoose.model('Exercise', exerciseSchema)
 
 app.use(cors())
 
@@ -29,40 +32,44 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/exercise/users', (req, res) => {
-  User.find({}, (err, users) => {
-    if (err) {
-      res.send(err)
-    }
-    res.json(users)
-  })
+  User.find({})
+    .populate('exercises')
+    .exec((err, users) => {
+      if (err) {
+        res.send(err)
+      }
+      res.json(users)
+    })
 })
 
 app.get('/api/exercise/log/', (req, res) => {
-  User.findById(req.query.userId, (err, user) => {
-    if (!err && user) {
-      var exercises = user.exercises
-      var count = exercises.length
-      var log = []
+  User.findById(req.query.userId)
+    .populate('exercises')
+    .exec((err, user) => {
+      if (!err && user) {
+        var exercises = user.exercises
+        var count = exercises.length
+        var log = []
 
-      for (let exercise of exercises) {
-        log.push({
-          description: exercise.description,
-          duration: exercise.duration,
-          date: exercise.date })
+        for (let exercise of exercises) {
+          log.push({
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date })
+        }
+
+        var response = {
+          _id: user._id,
+          username: user.username,
+          count: count,
+          log: log
+        }
+
+        res.json(response)
+      } else {
+        res.send("User doesn't exist")
       }
-
-      var response = {
-        _id: user._id,
-        username: user.username,
-        count: count,
-        log: log
-      }
-
-      res.json(response)
-    } else {
-      res.send("User doesn't exist")
-    }
-  })
+    })
 })
 
 app.post('/api/exercise/new-user', (req, res) => {
@@ -85,21 +92,32 @@ app.post('/api/exercise/add', (req, res) => {
   User.findById(req.body.userId, (err, user) => {
     if (!err && user) {
       var today = new Date()
-      var todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
       var exercise = {
         description: req.body.description,
         duration: req.body.duration,
-        date: req.body.date ? req.body.date : todayString
+        date: req.body.date ? req.body.date : today,
+        user: user._id
       }
-      user.exercises.push(exercise)
-      user.save((err) => {
-        if (err) res.send(err)
-        res.json(user)
+      var newExercise = new Exercise(exercise)
+      newExercise.save((err, exercise) => {
+        if (err) {
+          res.send(err)
+        } else {
+          user.exercises.push(exercise._id)
+          user.save((err, user) => {
+            if (err) res.send(err)
+          })
+        }
       })
     } else {
       res.send("User doesn't exist")
     }
   })
+    .populate('exercises')
+    .exec((err, user) => {
+      if (err) res.send(err)
+      res.json(user)
+    })
 })
 
 // Not found middleware
