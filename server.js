@@ -14,8 +14,7 @@ const exerciseSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 })
 const userSchema = new mongoose.Schema({
-  username: String,
-  exercises: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Exercise' }]
+  username: String
 })
 
 const User = mongoose.model('User', userSchema)
@@ -103,9 +102,12 @@ app.post('/api/exercise/add', (req, res) => {
         if (err) {
           res.send(err)
         } else {
-          user.exercises.push(exercise._id)
-          user.save((err, user) => {
-            if (err) res.send(err)
+          res.json({
+            user: user.username,
+            description: exercise.description,
+            duration: exercise.duration,
+            _id: user._id,
+            date: exercise.date
           })
         }
       })
@@ -113,11 +115,6 @@ app.post('/api/exercise/add', (req, res) => {
       res.send("User doesn't exist")
     }
   })
-    .populate('exercises')
-    .exec((err, user) => {
-      if (err) res.send(err)
-      res.json(user)
-    })
 })
 
 // Not found middleware
