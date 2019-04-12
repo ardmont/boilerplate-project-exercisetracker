@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId;
 mongoose.connect(process.env.MONGODBURL, { useNewUrlParser: true })
 
 const exerciseSchema = new mongoose.Schema({
@@ -42,33 +43,21 @@ app.get('/api/exercise/users', (req, res) => {
 })
 
 app.get('/api/exercise/log/', (req, res) => {
-  User.findById(req.query.userId)
-    .populate('exercises')
-    .exec((err, user) => {
-      if (!err && user) {
-        var exercises = user.exercises
-        var count = exercises.length
-        var log = []
-
-        for (let exercise of exercises) {
-          log.push({
-            description: exercise.description,
-            duration: exercise.duration,
-            date: exercise.date })
+  User.findById(req.query.userId).lean().exec((err, user) => {
+    if (err) {
+      res.send(err)
+    } else if (user) {
+      Exercise.find({ user: new ObjectId(user._id) }, (err, exercises) => {
+        if (err) {
+          res.send(err)
+        } else if (exercises) {
+          user.count = exercises.length
+          user.log = exercises
+          res.send(user)
         }
-
-        var response = {
-          _id: user._id,
-          username: user.username,
-          count: count,
-          log: log
-        }
-
-        res.json(response)
-      } else {
-        res.send("User doesn't exist")
-      }
-    })
+      })
+    }
+  })
 })
 
 app.post('/api/exercise/new-user', (req, res) => {
