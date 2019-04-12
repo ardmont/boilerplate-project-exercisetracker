@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
-const ObjectId = mongoose.Types.ObjectId;
+const ObjectId = mongoose.Types.ObjectId
 mongoose.connect(process.env.MONGODBURL, { useNewUrlParser: true })
 
 const exerciseSchema = new mongoose.Schema({
@@ -47,7 +47,11 @@ app.get('/api/exercise/log/', (req, res) => {
     if (err) {
       res.send(err)
     } else if (user) {
-      Exercise.find({ user: new ObjectId(user._id) }, (err, exercises) => {
+      var query = Exercise.find({ user: new ObjectId(user._id) })
+      if (req.query.limit) {
+        query.limit(Number(req.query.limit))
+      }
+      query.exec((err, exercises) => {
         if (err) {
           res.send(err)
         } else if (exercises) {
