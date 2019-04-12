@@ -48,6 +48,12 @@ app.get('/api/exercise/log/', (req, res) => {
       res.send(err)
     } else if (user) {
       var query = Exercise.find({ user: new ObjectId(user._id) })
+      if (req.query.from) {
+        query.where('date').gte(req.query.from)
+      }
+      if (req.query.to) {
+        query.where('date').lte(req.query.to)
+      }
       if (req.query.limit) {
         query.limit(Number(req.query.limit))
       }
